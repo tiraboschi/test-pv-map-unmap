@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-templates
+data:
+  runner.sh: |
+    #!/bin/sh
+    set -e
+    
+    # Generating an unique name for the PVC
+    PVC_NAME=pvc-${INSTANCE}
+
+    JOB_UID=$(oc get job sequence-${INSTANCE} -o jsonpath='{.metadata.uid}')
+    
+    # Creating PVC
+    echo "$(date) - Creating PVC"
+    cat <<EOF | oc create -f -
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: $PVC_NAME
+      namespace: ${NAMESPACE}
+      ownerReferences:
+      - apiVersion: batch/v1
+        kind: Job
+        name: sequence-${INSTANCE}
+        uid: ${JOB_UID}
+      labels:
+        instance: instance-${INSTANCE}
+        type: pvc-sequence
+    spec:
+      accessModes:
+      - ${PVCACCESSMODE}
+      volumeMode: Block
+      resources:
+        requests:
+          storage: 1Gi
+    EOF
+    
+    for iteration in $(seq -w 0001 $ITERATIONS); do
+      echo "### running iteration #${iteration}"
+    
+      # Creating disk-writer pod
+      echo "$(date) - iteration ${iteration} - Creating disk-writer pod"
+      cat <<EOF | oc create -n ${NAMESPACE} -f -
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        generateName: diskwriter-${INSTANCE}-
+        namespace: ${NAMESPACE}
+        ownerReferences:
+        - apiVersion: batch/v1
+          kind: Job
+          name: sequence-${INSTANCE}
+          uid: ${JOB_UID}
+        labels:
+          instance: instance-${INSTANCE}
+          role: diskwriter
+      spec:
+        containers:
+        - name: write
+          image: quay.io/tiraboschi/alpine:latest
+          command: ['sh', '-c', 'echo "$(date) - Starting POD with a block PV..."; echo "$(date) - Hello, World!"; DELAY=$(($MINWRITESECONDS + $RANDOM % $(($MAXWRITESECONDS - $MINWRITESECONDS)))); echo "Sleeping \$DELAY seconds"; sleep \$DELAY; echo "$(date) - Done"']
+          volumeDevices:
+          - devicePath: /dev/testdisk
+            name: testdisk
+        volumes:
+        - name: testdisk
+          persistentVolumeClaim:
+            claimName: ${PVC_NAME}
+        restartPolicy: Never
+    EOF
+      
+      # Get diskwriter pod name
+      echo "$(date) - iteration ${iteration} - Get diskwriter pod name"
+      DW_NAME=$(oc get -n ${NAMESPACE} pods -l=instance=instance-${INSTANCE} -l=role=diskwriter --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}')
+
+      echo "$(date) - iteration ${iteration} - Waiting for DiskWriter POD ($DW_NAME) to be executed..."
+      oc wait pod -n ${NAMESPACE} $DW_NAME --for=jsonpath='{.status.phase}'=Running --timeout=300s
+      echo "$(date) - iteration ${iteration} - POD ($DW_NAME) is running"
+    
+      echo "$(date) - iteration ${iteration} - Waiting for DiskWriter POD ($DW_NAME) to complete..."
+      oc wait pod -n ${NAMESPACE} $DW_NAME --for=jsonpath='{.status.phase}'=Succeeded --timeout=$(($MAXWRITESECONDS + 120))s
+      
+      # Creating sleeper pod
+      echo "$(date) - iteration ${iteration} - Creating sleeper pod name"
+      cat <<EOF | oc create -n ${NAMESPACE} -f -
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        generateName: sleeper-${INSTANCE}-
+        namespace: ${NAMESPACE}
+        ownerReferences:
+        - apiVersion: batch/v1
+          kind: Job
+          name: sequence-${INSTANCE}
+          uid: ${JOB_UID}
+        labels:
+          instance: instance-${INSTANCE}
+          role: sleeper
+      spec:
+        containers:
+        - name: sleep
+          image: quay.io/tiraboschi/alpine:latest
+          command: ["sh", "-c", "echo "$(date) - Sleeping $SLEEPSECONDS seconds..."; sleep $SLEEPSECONDS"]
+        restartPolicy: Never
+    EOF
+      SLEEPER_NAME=$(oc get -n ${NAMESPACE} pods -l=instance=instance-${INSTANCE} -l=role=sleeper --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}')
+    
+      echo "$(date) - iteration ${iteration} - Waiting for Sleeper POD ($SLEEPER_NAME) to be executed..."
+      oc wait pod -n ${NAMESPACE} $SLEEPER_NAME --for=jsonpath='{.status.phase}'=Running --timeout=300s
+      echo "$(date) - iteration ${iteration} - POD ($SLEEPER_NAME) is running"
+      
+      echo "$(date) - iteration ${iteration} - Waiting for Sleeper POD ($SLEEPER_NAME) to complete..."
+      oc wait pod -n ${NAMESPACE} $SLEEPER_NAME --for=jsonpath='{.status.phase}'=Succeeded --timeout=$(($SLEEPSECONDS + 120))s
+    
+      echo "$(date) - iteration ${iteration} - Iteration completed!"
+    done
+      
+    echo "$(date) - Sequence completed!"

@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sequence-{{INSTANCE}}
+  labels:
+    name: pv-sequence-job
+spec:
+  template:
+    spec:
+      serviceAccountName: test-map-unmap
+      containers:
+      - name: runner
+        image: quay.io/codeready-toolchain/oc-client-base
+        command: ["/bin/sh", "-c", "/pods/runner.sh"]
+        env:
+          - name: INSTANCE
+            value: "{{INSTANCE}}"
+          - name: NAMESPACE
+            value: "{{NAMESPACE}}"
+          - name: SLEEPSECONDS
+            value: "{{SLEEPSECONDS}}"
+          - name: MINWRITESECONDS
+            value: "{{MINWRITESECONDS}}"
+          - name: MAXWRITESECONDS
+            value: "{{MAXWRITESECONDS}}"
+          - name: PVCACCESSMODE
+            value: "{{PVCACCESSMODE}}"
+          - name: ITERATIONS
+            value: "{{ITERATIONS}}"
+        volumeMounts:
+        - name: pods
+          mountPath: /pods
+      restartPolicy: Never
+      volumes:
+      - name: pods
+        configMap:
+          name: pod-templates
+          defaultMode: 0750
