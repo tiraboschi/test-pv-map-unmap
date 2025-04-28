@@ -102,7 +102,7 @@ data:
         containers:
         - name: sleep
           image: quay.io/tiraboschi/alpine:latest
-          command: ["sh", "-c", "echo "$(date) - Sleeping $SLEEPSECONDS seconds..."; sleep $SLEEPSECONDS"]
+          command: ["sh", "-c", 'echo "$(date) - Sleeping $SLEEPSECONDS seconds..."; sleep $SLEEPSECONDS']
         restartPolicy: Never
     EOF
       SLEEPER_NAME=$(oc get -n ${NAMESPACE} pods -l=instance=instance-${INSTANCE} -l=role=sleeper --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}')
