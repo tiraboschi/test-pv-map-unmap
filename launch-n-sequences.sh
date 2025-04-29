@@ -13,6 +13,8 @@ MAXWRITESECONDS=${MAXWRITESECONDS:-300}
 PVCACCESSMODE=${PVCACCESSMODE:-ReadWriteMany}
 # Number of iteration (write->sleep) for each PVC
 ITERATIONS=${ITERATIONS:-10}
+# Name of the Storage Class to create the Volumes from
+STORAGECLASSNAME=${STORAGECLASSNAME:-""}
 
 echo "##########"
 echo "This script will create ${NUMPARALLEL} parallel jobs."
