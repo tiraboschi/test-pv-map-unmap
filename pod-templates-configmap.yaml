@@ -29,6 +29,7 @@ data:
         instance: instance-${INSTANCE}
         type: pvc-sequence
     spec:
+      storageClassName: ${STORAGECLASSNAME}
       accessModes:
       - ${PVCACCESSMODE}
       volumeMode: Block
