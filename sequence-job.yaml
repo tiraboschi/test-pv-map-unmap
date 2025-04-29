@@ -27,6 +27,10 @@ spec:
             value: "{{PVCACCESSMODE}}"
           - name: ITERATIONS
             value: "{{ITERATIONS}}"
+          - name: STORAGECLASS
+            value: "{{STORAGECLASS}}"
+          - name: STORAGEREQUEST
+            value: "{{STORAGEREQUEST}}"
         volumeMounts:
         - name: pods
           mountPath: /pods
