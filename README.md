@@ -38,13 +38,15 @@ Please continue monitoring pod creation times
 ## Customization
 The execution can be customized with the following environmental variables:
 
-| Name            | Description                                                                    | Default value |
-|-----------------|--------------------------------------------------------------------------------|---------------|
-| NAMESPACE       | Namespace to contain test objects                                              | default       |
-| NUMPARALLEL     | Number of jobs to be executed in parallel (one PVC for each job)               | 150           |
-| SLEEPSECONDS    | Number of seconds between a (fake) write pod and the next one for the same PVC | 900           |
-| MINWRITESECONDS | Minimum number of seconds elapsed in a (fake) write task                       | 120           |
-| MAXWRITESECONDS | Maximum number of seconds elapsed in a (fake) write task                       | 300           |
-| PVCACCESSMODE   | PVC Access Mode                                                                | ReadWriteMany |
-| ITERATIONS      | Number of iteration (write->sleep) for each PVC                                | 10            |
-
+| Name               | Description                                                                    | Default value      |
+|--------------------|--------------------------------------------------------------------------------|--------------------|
+| NAMESPACE          | Namespace to contain test objects                                              | default            |
+| NUMPARALLEL        | Number of jobs to be executed in parallel (one PVC for each job)               | 150                |
+| SLEEPSECONDS       | Number of seconds between a (fake) write pod and the next one for the same PVC | 900                |
+| MINWRITESECONDS    | Minimum number of seconds elapsed in a (fake) write task                       | 120                |
+| MAXWRITESECONDS    | Maximum number of seconds elapsed in a (fake) write task                       | 300                |
+| PVCACCESSMODE      | PVC Access Mode                                                                | ReadWriteMany      |
+| ITERATIONS         | Number of iteration (write->sleep) for each PVC                                | 10                 |
+| STORAGECLASS       | Name of the storage class to be used for the test                              | Empty (default SC) |
+| STORAGEREQUEST     | Storage request for test PVCs                                                  | 1Gi                |
+| RAMPUPDELAYSECONDS | Number of seconds of delay after the creation of each job                      | 1                  |
