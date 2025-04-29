@@ -27,6 +27,8 @@ spec:
             value: "{{PVCACCESSMODE}}"
           - name: ITERATIONS
             value: "{{ITERATIONS}}"
+          - name: STORAGECLASSNAME
+            value: "{{STORAGECLASSNAME}}"
         volumeMounts:
         - name: pods
           mountPath: /pods
