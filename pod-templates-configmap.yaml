@@ -46,6 +46,7 @@ data:
     for iteration in $(seq -w 0001 "$ITERATIONS"); do
       echo "### running iteration #${iteration}"
     
+      SECONDS=0
       # Creating disk-writer pod
       echo "$(date) - iteration ${iteration} - Creating disk-writer pod"
       cat <<EOF | oc create -n "${NAMESPACE}" -f -
@@ -84,6 +85,7 @@ data:
       echo "$(date) - iteration ${iteration} - Waiting for DiskWriter POD ($DW_NAME) to be executed..."
       oc wait pod -n "${NAMESPACE}" "$DW_NAME" --for=jsonpath='{.status.phase}'=Running --timeout=300s
       echo "$(date) - iteration ${iteration} - POD ($DW_NAME) is running"
+      echo "$(date) - iteration ${iteration} - starting POD ($DW_NAME) took ${SECONDS} seconds"
     
       echo "$(date) - iteration ${iteration} - Waiting for DiskWriter POD ($DW_NAME) to complete..."
       oc wait pod -n "${NAMESPACE}" "$DW_NAME" --for=jsonpath='{.status.phase}'=Succeeded --timeout=$((MAXWRITESECONDS + 120))s
